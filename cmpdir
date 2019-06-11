@@ -1,0 +1,47 @@
+#!/bin/bash
+args=3
+if [ $# -ne $args ]
+ then
+  echo Wrong number of arguments - Usage: cmpdir [dir1] [dir2] [dir3 - common] 
+else
+  if [ ! -d "$1" ]; then
+  echo "Directory $1 does not exist."
+  exit 1
+  fi
+  if [ ! -d "$2" ]; then
+  echo "Directory $2 does not exist."
+  exit 1
+  fi
+  if [ ! -d "$3" ]; then
+  echo "Directory $3 does not exist."
+  exit 1
+  fi
+  # $1 $2 $3
+  
+
+  eval declare -A FilesInDir1=($(ls -lp $1 | grep -v / | awk '/^$/ {next} {printf "[%s]=%s\n",$9,$5}'))
+  eval declare -A FilesInDir2=($(ls -lp $2 | grep -v / | awk '/^$/ {next} {printf "[%s]=%s\n",$9,$5}'))
+  # diff -q $dir1 $dir2 | sort
+  # $dir1
+  # $dir2
+
+  for i in "${!FilesInDir1[@]}"
+  do
+    echo "key  : $i"
+    echo "value: ${FilesInDir1[$i]}"
+  done
+
+  echo " "
+  echo " "
+
+
+  for i in "${!FilesInDir2[@]}"
+  do
+    echo "key  : $i"
+    echo "value: ${FilesInDir2[$i]}"
+  done
+
+
+  # diff $1 $2 | sort
+
+fi
