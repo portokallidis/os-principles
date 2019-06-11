@@ -19,29 +19,145 @@ else
   # $1 $2 $3
   
 
-  eval declare -A FilesInDir1=($(ls -lp $1 | grep -v / | awk '/^$/ {next} {printf "[%s]=%s\n",$9,$5}'))
-  eval declare -A FilesInDir2=($(ls -lp $2 | grep -v / | awk '/^$/ {next} {printf "[%s]=%s\n",$9,$5}'))
-  # diff -q $dir1 $dir2 | sort
-  # $dir1
-  # $dir2
+  eval declare -A FilesInDir1=($(ls -lp $1 | grep -v / | awk '{if(NR>1)printf "[%s]=%s\n",$9,$5}'))
+  eval declare -A FilesInDir2=($(ls -lp $2 | grep -v / | awk '{if(NR>1)printf "[%s]=%s\n",$9,$5}'))
 
+  declare -A FilesOnlyInDir1
+  declare -A FilesOnlyInDir2
+  declare -A CommonFiles
+
+
+  # loop through Dir1
   for i in "${!FilesInDir1[@]}"
   do
-    echo "key  : $i"
-    echo "value: ${FilesInDir1[$i]}"
+    if [[ -v "FilesInDir2[$i]" ]]; then
+
+      # find common files
+      if [[ FilesInDir2[$i] -eq FilesInDir1[$i] ]]; then 
+        CommonFiles[$i]=${FilesInDir2[$i]:=0}
+      fi
+    
+    # find only files that exist in dir1
+    else 
+      # echo "Only in dir1 $i"
+      FilesOnlyInDir1[$i]=${FilesInDir1[$i]:=0}
+
+    fi
   done
 
-  echo " "
-  echo " "
-
-
+  # loop through Dir2
   for i in "${!FilesInDir2[@]}"
   do
-    echo "key  : $i"
-    echo "value: ${FilesInDir2[$i]}"
+    # find only files that exist in dir2
+    if [[ ! -v "FilesInDir1[$i]" ]]; then 
+      # echo "Only in dir2 $i"
+      FilesOnlyInDir2[$i]=${FilesInDir2[$i]:=0}
+    fi
   done
+  
 
 
-  # diff $1 $2 | sort
+  # DEBUG>>
+
+  # sum1All=0
+  # count1All=0
+  # echo " "
+  # echo "All Files In Dir1"
+  # echo "-----------------"
+  # for i in "${!FilesInDir1[@]}"
+  # do
+  #   ((sum1All+=FilesInDir1[$i]))
+  #   ((count1All++))
+  #   echo "$i  ${FilesInDir1[$i]}"
+  # done
+  # echo " "
+  # echo "Total files : $count1All"
+  # echo "Total size : $sum1All"
+  # echo " "
+  # echo "___"
+
+
+  # sum2All=0
+  # count2All=0
+  # echo " "
+  # echo "All Files In Dir2"
+  # echo "-----------------"
+  # for i in "${!FilesInDir2[@]}"
+  # do
+  #   ((sum2All+=FilesInDir2[$i]))
+  #   ((count2All++))
+  #   echo "$i  ${FilesInDir2[$i]}"
+  # done
+  # echo " "
+  # echo "Total files : $count2All"
+  # echo "Total size : $sum2All"
+  # echo " "
+  # echo "___"
+
+  #  <<DEBUG
+
+  sum1=0
+  count1=0
+  echo " "
+  echo "Files Only In Dir1"
+  echo "-----------------"
+  for i in "${!FilesOnlyInDir1[@]}"
+  do
+    ((sum1+=FilesOnlyInDir1[$i]))
+    ((count1++))
+    echo "$i  ${FilesOnlyInDir1[$i]}"
+  done
+  echo " "
+  echo "Total files : $count1"
+  echo "Total size : $sum1"
+  echo " "
+  echo "___"
+
+
+
+  sum2=0
+  count2=0
+  echo " "
+  echo "Files Only In Dir2"
+  echo "-----------------"
+  for i in "${!FilesOnlyInDir2[@]}"
+  do
+    ((sum2+=FilesOnlyInDir2[$i]))
+    ((count2++))
+    echo "$i  ${FilesOnlyInDir2[$i]}"
+  done
+  echo " "
+  echo "Total files : $count2"
+  echo "Total size : $sum2"
+  echo " "
+  echo "___"
+
+
+  sumC=0
+  countC=0
+  echo " "
+  echo "Common Files"
+  echo "------------"
+  for i in "${!CommonFiles[@]}"
+  do
+    ((sumC+=CommonFiles[$i]))
+    ((countC++))
+    echo "$i  ${CommonFiles[$i]}"
+
+    # move common files to common dir ($3)
+    mv $2/$i $3/$i
+    mv $1/$i $3/$i
+
+    # create hard link to each of the original dirs ($1 and $2)
+    ln $3/$i $1/$i 
+    ln $3/$i $2/$i 
+  done
+  echo " "
+  echo "Total files : $countC"
+  echo "Total size : $sumC"
+  echo " "
+  echo "___"
+  echo " "
+  
 
 fi
